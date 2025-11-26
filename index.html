@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificación De Presiones</title>
+  <link rel="manifest" href="manifest.json" />
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    .titulo {
+      text-align: left;
+    }
+
+    @media (max-width: 600px) {
+      .titulo {
+        text-align: center;
+      }
+      .fila-doble {
+        flex-direction: column;
+      }
+    }
+
+    input, select {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 6px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+      background-color: #fff;
+    }
+
+    .fila-doble {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .columna {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #resultado {
+      font-weight: bold;
+      font-size: 1.05em;
+      margin-top: 18px;
+      color: #333;
+      white-space: pre-line;
+    }
+
+    .logo {
+      display: block;
+      margin: 0 auto 20px;
+      max-width: 250px;
+      height: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+  <img src="LOGO VALSER.png" alt="Logo" class="logo">
+  <h1 class="titulo">PRUEBAS DE PRESIONES</h1>
+
+  <input type="text" id="Client_Proy" placeholder="Cliente/Proyecto">
+
+  <div class="fila-doble">
+    <div class="columna">
+      <input type="text" id="Tag" placeholder="Tag/Serial">
+      <select id="sel_prueb">
+        <option value="Tipo de prueba" disabled selected>Tipo de prueba</option>
+        <option value="Banco">Banco</option>
+        <option value="VST">VST</option>
+      </select>
+
+      <select id="manometro" style="display:none;">
+        <option value="Manómetro" disabled selected>Manómetro</option>
+        <option value="MAN-002 (Crystal 5k)">MAN-002 (Crystal 5k)</option>
+        <option value="MAN-003 (Additel)">MAN-003 (Additel)</option>
+        <option value="MAN-005 (Crystal 1k)">MAN-005 (Crystal 1k)</option>
+        <option value="MAN-006 (Wika)">MAN-006 (Wika)</option>
+      </select>
+    </div>
+
+    <div class="columna">
+      <select id="sel_seccion">
+        <option value="Sección válvula" disabled selected>Sección válvula</option>
+        <option value="Sec. I">Sec. I</option>
+        <option value="Sec. VIII">Sec. VIII</option>
+      </select>
+      <input type="number" id="set" placeholder="Set de presión válvula">
+    </div>
+  </div>
+
+  <input type="number" id="p1" placeholder="Escape 1 (PSI)">
+  <input type="number" id="p2" placeholder="Escape 2 (PSI)">
+  <input type="number" id="p3" placeholder="Escape 3 (PSI)">
+  <input type="number" id="p4" placeholder="Escape 4 (PSI)">
+
+  <button onclick="validar()">✅ Verificar</button>
+  <button onclick="enviarCorreo()">📤 Enviar pruebas aprobadas</button>
+
+  <div id="resultado"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+  <script>
+    // ---- Inicialización UI ----
+    document.addEventListener('DOMContentLoaded', () => {
+      const selPrueba = document.getElementById("sel_prueb");
+      const manometro = document.getElementById("manometro");
+      const p4 = document.getElementById("p4");
+
+      function togglePresiones() {
+        if (selPrueba.value === "VST") {
+          p4.style.display = "none";
+          p4.value = "";
+        } else {
+          p4.style.display = "block";
+        }
+      }
+
+      function toggleManometro() {
+        if (selPrueba.value === "Banco") {
+          manometro.style.display = "block";
+        } else {
+          manometro.style.display = "none";
+          manometro.value = "Manómetro";
+        }
+      }
+
+      selPrueba.addEventListener("change", () => {
+        togglePresiones();
+        toggleManometro();
+      });
+
+      togglePresiones();
+      toggleManometro();
+    });
+
+    emailjs.init("tlcM6igKsBWhU-7x1");
+
+    function mostrarMensaje(msg) {
+      document.getElementById("resultado").innerText = msg;
+    }
+
+    // Validación del manómetro según Excel
+    function validarManometroSeleccion(set, manometro) {
+      if (set < 800 && (manometro === "MAN-005 (Crystal 1k)" || manometro === "MAN-006 (Wika)")) return true;
+      if (set > 600 && (manometro === "MAN-002 (Crystal 5k)" || manometro === "MAN-003 (Additel)")) return true;
+      return false;
+    }
+
+    // --- Función principal ---
+    function validar() {
+      const client_proy = document.getElementById("Client_Proy").value.trim();
+      const tag = document.getElementById("Tag").value.trim();
+      const set = parseFloat(document.getElementById("set").value);
+      const seccion = document.getElementById("sel_seccion").value;
+      const tipo = document.getElementById("sel_prueb").value;
+      const manometro = document.getElementById("manometro").value;
+
+      const p1 = parseFloat(document.getElementById("p1").value);
+      const p2 = parseFloat(document.getElementById("p2").value);
+      const p3 = parseFloat(document.getElementById("p3").value);
+      const p4 = parseFloat(document.getElementById("p4").value);
+
+      if (!client_proy) return mostrarMensaje("⚠️ Falta Cliente/Proyecto.");
+      if (!tag) return mostrarMensaje("⚠️ Falta Tag/Serial.");
+      if (isNaN(set)) return mostrarMensaje("⚠️ Falta set de presión válvula.");
+      if (tipo === "Banco" && manometro === "Manómetro") return mostrarMensaje("⚠️ Debes seleccionar manómetro.");
+      if (seccion === "Sección válvula") return mostrarMensaje("⚠️ Debes seleccionar la sección.");
+      if (tipo === "Tipo de prueba") return mostrarMensaje("⚠️ Debes seleccionar tipo de prueba.");
+
+      let presiones = [
+        { nombre: "Escape 1", valor: p1 },
+        { nombre: "Escape 2", valor: p2 },
+        { nombre: "Escape 3", valor: p3 }
+      ];
+      if (tipo === "Banco") presiones.push({ nombre: "Escape 4", valor: p4 });
+
+      if (presiones.some(p => isNaN(p.valor))) {
+        return mostrarMensaje(`⚠️ Faltan presiones para ${tipo}`);
+      }
+
+      // Promedio
+      const promedio = presiones.reduce((acc, p) => acc + p.valor, 0) / presiones.length;
+
+      // Rango repetibilidad
+      const deltaRep = promedio > 50 ? promedio * 0.01 : 0.5;
+      const infRep = promedio - deltaRep;
+      const supRep = promedio + deltaRep;
+
+      // Rango por sección
+      let deltaSeccion = 0;
+      if (seccion === "Sec. I") {
+        if (set <= 70) deltaSeccion = 2;
+        else if (set <= 300) deltaSeccion = set * 0.03;
+        else if (set <= 1000) deltaSeccion = 10;
+        else deltaSeccion = set * 0.01;
+      } else if (seccion === "Sec. VIII") {
+        deltaSeccion = set <= 70 ? 2 : set * 0.03;
+      }
+
+      const ajuste = set <= 500 ? 0.2 : set <= 1000 ? 1 : 1.8;
+      const infSeccion = set - deltaSeccion + ajuste;
+      const supSeccion = set + deltaSeccion - ajuste;
+
+      // Errores
+      const erroresRep = presiones
+        .filter(p => p.valor < infRep || p.valor > supRep)
+        .map(p => `${p.nombre}: ${p.valor} PSI fuera del rango de repetibilidad`);
+
+      const erroresSec = presiones
+        .filter(p => p.valor < infSeccion || p.valor > supSeccion)
+        .map(p => `${p.nombre}: ${p.valor} PSI fuera del rango por sección`);
+
+      // Incertidumbre
+      let incertidumbre = 0;
+      if (manometro.includes("MAN-002")) incertidumbre = 0.87;
+      else if (manometro.includes("MAN-003")) incertidumbre = 1.78;
+      else if (manometro.includes("MAN-005")) incertidumbre = 0.18;
+
+      let desviacionTotal = 0;
+
+      // Desviación total
+      if (tipo === "Banco") {
+        const valores = presiones.map(p => p.valor);
+        const n = valores.length;
+        const media = promedio;
+        const sumatoria = valores.reduce((acc, v) => acc + Math.pow(v - media, 2), 0);
+        const desviacionEstandar = n > 1 ? Math.sqrt(sumatoria / (n - 1)) : 0;
+        const errorDividido = desviacionEstandar / Math.sqrt(n);
+        desviacionTotal = errorDividido + incertidumbre;
+      }
+
+      // Validación manómetro
+      let manometroOK = true;
+      if (tipo === "Banco") {
+        manometroOK = validarManometroSeleccion(set, manometro);
+      }
+
+      // Validación desviación
+      let errorDesviacion = false;
+      if (tipo === "Banco") {
+        const limite = promedio * 0.01;
+        if (limite < desviacionTotal) errorDesviacion = true;
+      }
+
+      // Aprobación final
+      const aprobadoBase = erroresRep.length === 0 && erroresSec.length === 0;
+      const aprobadoFinal = aprobadoBase && !errorDesviacion && manometroOK;
+
+      let resultado = aprobadoFinal ? "✅ Aprobado" : "❌ Repite";
+
+      // *** ESTA ES LA PARTE ARREGLADA (template strings) ***
+      if (erroresRep.length > 0) {
+        resultado += `
+        
+- Falló prueba de repetibilidad
+${erroresRep.join("\n")}`;
+      }
+
+      if (erroresSec.length > 0) {
+        resultado += `
+
+- Falló prueba por sección
+${erroresSec.join("\n")}`;
+      }
+
+      if (errorDesviacion) {
+        resultado += `
+
+❌ Desviación de datos muy grande, prueba no pasa.`;
+      }
+
+      if (!manometroOK) {
+        resultado += `
+
+❌ Manómetro mal seleccionado, prueba no pasa.`;
+      }
+
+      resultado += `
+
+Rango repetibilidad: ${infRep.toFixed(2)} - ${supRep.toFixed(2)} PSI`;
+      resultado += `
+Rango por sección: ${infSeccion.toFixed(2)} - ${supSeccion.toFixed(2)} PSI`;
+
+      mostrarMensaje(resultado);
+
+      if (aprobadoFinal) {
+        const prueba = {
+          client_proy,
+          tag,
+          set,
+          seccion,
+          tipo,
+          manometro,
+          presiones: presiones.map(p => p.valor),
+          promedio,
+          desviacionTotal,
+          incertidumbre,
+          fecha: new Date().toLocaleString()
+        };
+
+        const aprobadas = JSON.parse(localStorage.getItem("pruebasAprobadas")) || [];
+        aprobadas.push(prueba);
+        localStorage.setItem("pruebasAprobadas", JSON.stringify(aprobadas));
+
+        document.getElementById("Tag").value = "";
+        document.getElementById("p1").value = "";
+        document.getElementById("p2").value = "";
+        document.getElementById("p3").value = "";
+        document.getElementById("p4").value = "";
+      }
+    }
+
+    // Envío correo
+async function enviarCorreo() {
+
+    // Obtener pruebas aprobadas almacenadas
+    const pruebas = JSON.parse(localStorage.getItem("pruebasAprobadas") || "[]");
+
+    if (pruebas.length === 0) {
+        alert("No hay pruebas aprobadas para enviar.");
+        return;
+    }
+
+    // Tomar la última prueba aprobada
+    const data = pruebas[pruebas.length - 1];
+
+    try {
+        const res = await fetch("/api/enviar-correo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        const json = await res.json();
+
+        if (json.status === "ok") {
+            alert("Correo enviado exitosamente ✔");
+
+            // Opcional: eliminar solo la última prueba enviada
+            pruebas.pop();
+            localStorage.setItem("pruebasAprobadas", JSON.stringify(pruebas));
+
+        } else {
+            alert("Error enviando: " + json.msg);
+        }
+
+    } catch (e) {
+        guardarColaOffline(data);
+        alert("⚠ Sin internet. El correo se enviará automáticamente cuando vuelva la conexión.");
+    }
+}
+
+
+    // SW
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log("SW registrado correctamente"))
+        .catch(e => console.error("SW falló", e));
+    }
+
+    function guardarColaOffline(data) {
+    let cola = JSON.parse(localStorage.getItem("colaCorreos") || "[]");
+    cola.push(data);
+    localStorage.setItem("colaCorreos", JSON.stringify(cola));
+}
+
+async function procesarCola() {
+    let cola = JSON.parse(localStorage.getItem("colaCorreos") || "[]");
+
+    if (cola.length === 0) return;
+
+    for (let i = 0; i < cola.length; i++) {
+        try {
+            await enviarCorreo(cola[i]);
+            cola.splice(i, 1);
+            i--;
+        } catch { return; }
+    }
+
+    localStorage.setItem("colaCorreos", JSON.stringify(cola));
+}
+
+// cuando vuelve el internet:
+window.addEventListener("online", procesarCola);
+
+  </script>
+</body>
+</html>
+
+
