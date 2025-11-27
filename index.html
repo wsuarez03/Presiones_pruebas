@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificación De Presiones</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f62fe">
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; background:#f9f9f9; color:#333; }
+    .titulo { text-align:left; }
+    @media (max-width:600px){ .titulo { text-align:center } .fila-doble{flex-direction:column} }
+    input, select { display:block; width:100%; padding:12px; margin:6px 0; border-radius:6px; border:1px solid #ccc; font-size:16px; box-sizing:border-box; background:#fff; }
+    .fila-doble{display:flex; gap:10px; margin-bottom:15px}
+    .columna{flex:1; display:flex; flex-direction:column; gap:4px}
+    button{display:block; width:100%; padding:12px; margin:10px 0; border-radius:6px; background:#4CAF50; color:#fff; border:none; cursor:pointer}
+    button.secondary{background:#1976d2}
+    button:hover{opacity:.95}
+    #resultado{font-weight:600; font-size:1.02em; margin-top:12px; white-space:pre-line}
+    .logo{display:block; margin:0 auto 10px; max-width:220px; height:auto}
+    .small{font-size:0.9em; color:#555}
+    footer{margin-top:18px; font-size:0.85em; color:#666}
+    .status { margin-top:8px; font-size:0.9em; }
+  </style>
+</head>
+<body>
+  <img src="Logo-Valser.png" alt="Logo" class="logo">
+  <h1 class="titulo">PRUEBAS DE PRESIONES</h1>
+
+  <input type="text" id="Client_Proy" placeholder="Cliente/Proyecto">
+  <div class="fila-doble">
+    <div class="columna">
+      <input type="text" id="Tag" placeholder="Tag/Serial">
+      <select id="sel_prueb">
+        <option value="Tipo de prueba" disabled selected>Tipo de prueba</option>
+        <option value="Banco">Banco</option>
+        <option value="VST">VST</option>
+      </select>
+
+      <select id="manometro" style="display:none;">
+        <option value="Manómetro" disabled selected>Manómetro</option>
+        <option value="MAN-002 (Crystal 5k)">MAN-002 (Crystal 5k)</option>
+        <option value="MAN-003 (Additel)">MAN-003 (Additel)</option>
+        <option value="MAN-005 (Crystal 1k)">MAN-005 (Crystal 1k)</option>
+        <option value="MAN-006 (Wika)">MAN-006 (Wika)</option>
+      </select>
+    </div>
+
+    <div class="columna">
+      <select id="sel_seccion">
+        <option value="Sección válvula" disabled selected>Sección válvula</option>
+        <option value="Sec. I">Sec. I</option>
+        <option value="Sec. VIII">Sec. VIII</option>
+      </select>
+      <input type="number" id="set" placeholder="Set de presión válvula">
+    </div>
+  </div>
+
+  <input type="number" id="p1" placeholder="Escape 1 (PSI)">
+  <input type="number" id="p2" placeholder="Escape 2 (PSI)">
+  <input type="number" id="p3" placeholder="Escape 3 (PSI)">
+  <input type="number" id="p4" placeholder="Escape 4 (PSI)">
+
+  <button id="btnVerificar">✅ Verificar</button>
+  <button id="btnEnviar" class="secondary">📤 Enviar pruebas aprobadas</button>
+
+  <div id="resultado"></div>
+  <div class="status small" id="statusLine">Estado: listo (offline-capable)</div>
+
+  <footer>
+    <p class="small">Esta aplicación funciona offline y guarda pruebas aprobadas en IndexedDB. Si hay conexión, las pruebas se envían a un Worker (configurar WORKER_URL en js/envio.js).</p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
