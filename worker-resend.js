@@ -3,7 +3,27 @@ addEventListener('fetch', event => {
 });
 
 async function handle(request) {
-  if (request.method !== 'POST') return new Response('Método no permitido', { status: 405 });
+
+  // --- 1. Manejo de CORS (preflight OPTIONS) ---
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Max-Age": "86400"
+      }
+    });
+  }
+
+  // --- 2. Solo permitimos POST reales ---
+  if (request.method !== 'POST') {
+    return new Response('Método no permitido', {
+      status: 405,
+      headers: corsHeaders()
+    });
+  }
 
   try {
     const data = await request.json();
@@ -16,13 +36,16 @@ async function handle(request) {
       <p><strong>Sección:</strong> ${escapeHtml(data.seccion || '')}</p>
       <p><strong>Tipo:</strong> ${escapeHtml(data.tipo || '')}</p>
       <p><strong>Manómetro:</strong> ${escapeHtml(data.manometro || '')}</p>
-      <p><strong>Presiones:</strong> ${(data.presiones || []).map(p=>escapeHtml(String(p))).join(', ')}</p>
+      <p><strong>Presiones:</strong> ${(data.presiones || []).map(p => escapeHtml(String(p))).join(', ')}</p>
       <p><strong>Promedio:</strong> ${escapeHtml(String(data.promedio))}</p>
       <p><strong>Fecha:</strong> ${escapeHtml(data.fecha || '')}</p>
     `;
 
     if (!RESEND_API_KEY) {
-      return new Response(JSON.stringify({ error: 'No API key configured' }), { status: 500, headers: corsHeaders() });
+      return new Response(JSON.stringify({ error: 'No API key configured' }), { 
+        status: 500, 
+        headers: corsHeaders() 
+      });
     }
 
     const resp = await fetch('https://api.resend.com/emails', {
@@ -42,16 +65,40 @@ async function handle(request) {
     if (!resp.ok) {
       const t = await resp.text();
       console.error('Resend error:', t);
-      return new Response(JSON.stringify({ error: 'Error sending' }), { status: 502, headers: corsHeaders() });
+      return new Response(JSON.stringify({ error: 'Error sending email' }), { 
+        status: 502, 
+        headers: corsHeaders() 
+      });
     }
 
-    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: corsHeaders() });
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: corsHeaders()
+    });
 
   } catch (err) {
     console.error('Worker internal error', err);
-    return new Response(JSON.stringify({ error: 'Internal' }), { status: 500, headers: corsHeaders() });
+    return new Response(JSON.stringify({ error: 'Internal error' }), {
+      status: 500,
+      headers: corsHeaders()
+    });
   }
 }
 
-function escapeHtml(s){ return (s||'').toString().replace(/[&<>"'`]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;",'`':'&#96;'})[c]); }
-function corsHeaders(){ return { 'Content-Type':'application/json', 'Access-Control-Allow-Origin':'*' }; }
+function escapeHtml(s) {
+  return (s || '').toString().replace(/[&<>"'`]/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+    '`': '&#96;'
+  })[c]);
+}
+
+function corsHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*"
+  };
+}
