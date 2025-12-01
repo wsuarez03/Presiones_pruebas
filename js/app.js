@@ -77,6 +77,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(()=>console.log('SW registrado')).catch(e=>console.error(e));
+    navigator.serviceWorker.register('./sw.js').then(()=>console.log('SW registrado')).catch(e=>console.error(e));
   }
 });
