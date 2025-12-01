@@ -1,5 +1,5 @@
 // Configure this to your deployed Worker URL (Cloudflare Worker)
-const WORKER_URL = 'worker-presiones.wilderalberto2000.workers.dev'; // <-- replace
+const WORKER_URL = 'https://worker-presiones.wilderalberto2000.workers.dev/'; // <-- replace
 
 import { obtenerPendientes, borrarPendiente } from './db.js';
 
