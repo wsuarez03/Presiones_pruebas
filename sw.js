@@ -1,15 +1,15 @@
 const CACHE_NAME = 'presiones-cache-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-512.png',
-  '/icon-192.png',
-  '/Logo-Valser.png',
-  '/js/app.js',
-  '/js/db.js',
-  '/js/validacion.js',
-  '/js/envio.js'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-512.png',
+  './icon-192.png',
+  './Logo-Valser.png',
+  './js/app.js',
+  './js/db.js',
+  './js/validacion.js',
+  './js/envio.js'
 ];
 
 self.addEventListener('install', event => {
